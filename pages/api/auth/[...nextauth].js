@@ -5,14 +5,14 @@ import spotifyAPI, { LOGIN_URL } from "../../../lib/spotify";
 async function refreshAccessToken(token) {
   try {
     spotifyAPI.setAccessToken(token.accessToken);
-    spotifyAPI.setRefreshToken(token.refreshAccessToken);
-    const { body: refreshToken } = await spotifyAPI.refreshAccessToken();
-    console.log("--- refreshToken ", refreshToken);
+    spotifyAPI.setRefreshToken(token.refreshToken);
+    const { body: newToken } = await spotifyAPI.refreshAccessToken();
+    console.log("--- refreshToken ", newToken);
     return {
       ...token,
-      accessToken: refreshToken.access_token,
-      refreshToken: refreshToken.refresh_token ?? token.refreshToken,
-      accessTokenExpires: Date.now() + refreshToken.expires_in * 1000,
+      accessToken: newToken.access_token,
+      accessTokenExpires: Date.now() + newToken.expires_in * 1000,
+      refreshToken: token.refreshToken,
     };
   } catch (e) {
     console.log("--- refreshAccessToken error");
@@ -40,17 +40,17 @@ export default NextAuth({
     async jwt({ token, account, user }) {
       // initial sign in
       if (account && user) {
-        console.log("--- first sign in");
+        // console.log("--- first sign in");
         return {
           ...token,
           accessToken: account.access_token,
+          accessTokenExpires: account.expires_at * 1000,
           refreshToken: account.refresh_token,
           username: account.providerAccountId,
-          accessTokenExpires: account.expires_at * 1000,
         };
       }
       if (Date.now() < token.accessTokenExpires) {
-        console.log("--- valid access token");
+        // console.log("--- valid access token");
         return token;
       }
       // refresh expired accesst token
